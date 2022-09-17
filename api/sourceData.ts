@@ -6,7 +6,7 @@
  * Copyright © 2022-2022 Andrea Fucci
  */
 
-import allProd from '../allProd.json';
+import allProd from '../allProd_original.json';
 import {SourceProduct} from '../models/Source';
 
 const fetchProducts = (): Promise<SourceProduct[]> => {
