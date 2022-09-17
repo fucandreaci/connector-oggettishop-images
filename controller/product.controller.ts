@@ -23,45 +23,49 @@ const getImage = async (product: SourceProduct): Promise<Image | undefined> => {
 
 const updateImages = async (sourceProducts: SourceProduct[], products: Product[]) => {
     for (const sourceProduct of sourceProducts) {
-        const prodName = sourceProduct.codice.slice(0, 7);
+        try {
+            const prodName = sourceProduct.codice.slice(0, 7);
 
-        let parent = getProductBySku(sourceProduct.articolo_padre, products);
-        if (!parent || !parent.id)
-            continue;
+            let parent = getProductBySku(sourceProduct.articolo_padre, products);
+            if (!parent || !parent.id)
+                continue;
 
-        const variations = await destinationData.fetchProductVariations(parent.id);
-        const isVariable = sourceProduct.codice !== sourceProduct.articolo_padre;
+            const variations = await destinationData.fetchProductVariations(parent.id);
+            const isVariable = sourceProduct.codice !== sourceProduct.articolo_padre;
 
-        const product = isVariable ? getProductBySku(sourceProduct.codice, variations) : parent;
+            const product = isVariable ? getProductBySku(sourceProduct.codice, variations) : parent;
 
-        const img = await getImage(sourceProduct);
-        if (!img || !('images' in parent))
-            continue;
+            const img = await getImage(sourceProduct);
+            if (!img || !('images' in parent))
+                continue;
 
-        if (isVariable) {
-            if (product && 'image' in product && product.id) {
+            if (isVariable) {
+                if (product && 'image' in product && product.id) {
 
-                product.image = img ? img : {};
+                    product.image = img ? img : {};
 
-                // Update woocommerce product
-                await destinationData.updateVariation(product, parent.id, product.id);
-                //if (!parent.image || !parent.image.src?.includes(prodName)) {
+                    // Update woocommerce product
+                    await destinationData.updateVariation(product, parent.id, product.id);
+                    //if (!parent.image || !parent.image.src?.includes(prodName)) {
 
-                //}
+                    //}
+                }
             }
-        }
 
-        const tmpProd = await destinationData.fetchById(parent.id);
-        if ('images' in tmpProd && !tmpProd.images.find((image) => image.src?.includes(prodName))) {
-            const images: Image[] = tmpProd.images.map((image) => {
-                return {
-                    id: image.id,
-                };
-            });
-            images.push(img);
+            const tmpProd = await destinationData.fetchById(parent.id);
+            if ('images' in tmpProd && !tmpProd.images.find((image) => image.src?.includes(prodName))) {
+                const images: Image[] = tmpProd.images.map((image) => {
+                    return {
+                        id: image.id,
+                    };
+                });
+                images.push(img);
 
-            parent.images = images;
-            await destinationData.updateProduct(parent);
+                parent.images = images;
+                await destinationData.updateProduct(parent);
+            }
+        } catch (e) {
+            console.error(e);
         }
     }
 }
